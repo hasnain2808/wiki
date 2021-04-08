@@ -49,8 +49,8 @@ def preview(content, path):
 	from frappe.website.context import get_context
 	# context = get_context(path[7:])
 	route = resolve_route(path[7:])
-	if route.template.endswith('.md'):
-		content= frappe.utils.md_to_html(content)
+	# if route.template.endswith('.md'):
+	content= frappe.utils.md_to_html(content)
 	jenv = frappe.get_jenv()
 	route.docs_base_url = '/docs'
 	# print(route)
@@ -70,7 +70,7 @@ def preview(content, path):
 @frappe.whitelist(methods=["POST"])
 def update( route, content, edit_message):
 	upd_req = frappe.new_doc("WebPage Update Request")
-	upd_req.code = content
+	upd_req.new_code = content
 	upd_req.status = 'Unapproved'
 	upd_req.route = route
 	upd_req.save()
