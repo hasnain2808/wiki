@@ -22,7 +22,12 @@
   "new_preview",
   "orignal_preview_store",
   "new_preview_store",
-  "route"
+  "route",
+  "attachment_path_mapping",
+  "pull_request_section",
+  "pr_title",
+  "pr_body",
+  "pr_link"
  ],
  "fields": [
   {
@@ -123,12 +128,38 @@
    "fieldname": "new_preview_section_section",
    "fieldtype": "Section Break",
    "label": "New Preview Section"
+  },
+  {
+   "fieldname": "attachment_path_mapping",
+   "fieldtype": "Text",
+   "hidden": 1,
+   "label": "Attachment Path Mapping"
+  },
+  {
+   "fieldname": "pull_request_section",
+   "fieldtype": "Section Break",
+   "label": "Pull Request"
+  },
+  {
+   "fieldname": "pr_title",
+   "fieldtype": "Data",
+   "label": "PR Title"
+  },
+  {
+   "fieldname": "pr_body",
+   "fieldtype": "Text",
+   "label": "PR Body"
+  },
+  {
+   "fieldname": "pr_link",
+   "fieldtype": "Data",
+   "label": "PR Link"
   }
  ],
  "has_web_view": 1,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2021-04-09 10:35:39.310946",
+ "modified": "2021-04-13 22:29:17.591375",
  "modified_by": "Administrator",
  "module": "Wiki",
  "name": "WebPage Update Request",

@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 import frappe
 from frappe.website.router import resolve_route
 from ghdiff import diff
-
+import json
 
 def get_context(context):
 	# res = frappe.db.get_all(
@@ -114,13 +114,24 @@ def preview(content, path):
 
 
 @frappe.whitelist()
-def update( route, content, edit_message_short, edit_message_long):
+def update( route, content, edit_message_short, edit_message_long, attachments):
+	print(attachments)
 	upd_req = frappe.new_doc("WebPage Update Request")
 	upd_req.new_code = content
 	upd_req.status = 'Unapproved'
 	upd_req.web_route = route
 	upd_req.raised_by = frappe.session.user
+	upd_req.pr_title = edit_message_short
+	upd_req.pr_body = edit_message_long
+	upd_req.attachment_path_mapping = attachments
+
 	upd_req.save()
+
+	for attachment in json.loads(attachments):
+		file = frappe.get_doc('File', attachment.get("name"))
+		file.attached_to_doctype = 'WebPage Update Request'
+		file.attached_to_name = upd_req.name
+		file.save()
 
 	# wiki_page = frappe.get_doc("Wiki Page", wiki_page)
 	# wiki_page.update_page(title, content, edit_message)

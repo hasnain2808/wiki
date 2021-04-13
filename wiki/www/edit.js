@@ -169,6 +169,8 @@ class EditAsset {
         edit_message_long: this.submit_section_field_group.get_value(
           "edit_message_long"
         ),
+
+        attachments: this.attachments
       },
       callback: (r) => {
         if (r.message) {
