@@ -6,7 +6,7 @@
  "engine": "InnoDB",
  "field_order": [
   "raised_by",
-  "route",
+  "web_route",
   "column_break_3",
   "approved_by",
   "status",
@@ -18,16 +18,13 @@
   "new_code",
   "previews_section",
   "orignal_preview",
+  "new_preview_section_section",
   "new_preview",
   "orignal_preview_store",
-  "new_preview_store"
+  "new_preview_store",
+  "route"
  ],
  "fields": [
-  {
-   "fieldname": "route",
-   "fieldtype": "Data",
-   "label": "Route"
-  },
   {
    "fieldname": "status",
    "fieldtype": "Select",
@@ -86,33 +83,52 @@
    "fieldname": "orignal_preview",
    "fieldtype": "HTML",
    "label": "Orignal Preview",
-   "options": "<div id=\"orignal_preview\"></div>"
+   "options": "<div id=\"orignal_preview\" style=\"height: 300px; overflow: auto;\"></div>"
   },
   {
    "fieldname": "new_preview",
    "fieldtype": "HTML",
    "label": "New Preview",
-   "options": "<div id=\"new_preview\"></div>"
+   "options": "<div id=\"new_preview\" style=\"height: 300px; overflow: auto;\"></div>"
   },
   {
    "fieldname": "previews_section",
    "fieldtype": "Section Break",
-   "label": "Previews"
+   "label": "Orignal Preview Section"
   },
   {
    "fieldname": "orignal_preview_store",
    "fieldtype": "Text",
+   "hidden": 1,
    "label": "Orignal Preview Store"
   },
   {
    "fieldname": "new_preview_store",
    "fieldtype": "Text",
+   "hidden": 1,
    "label": "New Preview Store"
+  },
+  {
+   "fieldname": "web_route",
+   "fieldtype": "Data",
+   "label": "Web Route"
+  },
+  {
+   "fieldname": "route",
+   "fieldtype": "Data",
+   "label": "Route",
+   "unique": 1
+  },
+  {
+   "fieldname": "new_preview_section_section",
+   "fieldtype": "Section Break",
+   "label": "New Preview Section"
   }
  ],
+ "has_web_view": 1,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2021-04-08 19:18:11.537676",
+ "modified": "2021-04-09 10:35:39.310946",
  "modified_by": "Administrator",
  "module": "Wiki",
  "name": "WebPage Update Request",
@@ -131,6 +147,7 @@
    "write": 1
   }
  ],
+ "route": "webpage-update",
  "sort_field": "modified",
  "sort_order": "DESC",
  "track_changes": 1,

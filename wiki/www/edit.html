@@ -1,23 +1,26 @@
-{% extends "templates/doc.html" %}
+{% extends "templates/web.html" %}
 
 {%- block head_include %}
 {{ super() }}
-<link rel="stylesheet" href="/assets/wiki/css/wiki.css">
+<!-- <link rel="stylesheet" href="/assets/wiki/css/wiki.css"> -->
 {% endblock -%}
 
-{% block page_content %}
+{% block page_container %}
 <div class="from-markdown">
-	<h1>{{ title }}</h1>
+	<h1>Edit WebPage</h1>
 </div>
+
+<div class="container">
 
 <form class="mt-8" action="/api/method/wiki.www.edit.update" method="POST">
 	<input class="d-none" type="text" name="csrf_token" value="{{ frappe.session.csrf_token }}">
-	<input class="d-none" type="text" name="wiki_page" value="{{ title }}">
+	<!-- <input class="d-none" type="text" name="wiki_page" value="{{ title }}"> -->
 	<div class="form-group">
 		<label class="sr-only" for="title">Title</label>
-		<input id="title" class="form-control" type="text" name="title" value="{{ title }}">
-		<input id="route" class="form-control" type="text" name="route" value="{{ route }}">
+		<!-- <input id="title" class="form-control" type="text" name="title" value="{{ title }}"> -->
+		<input id="route" class="form-control" type="text" name="route" value="{{ route }}" hidden>
 	</div>
+	<div class="routedisp"></div>
 	<div class="form-group">
 		<label class="sr-only" for="content">Content</label>
 		<ul class="nav nav-tabs" role="tablist">
@@ -29,13 +32,25 @@
 				<a class="nav-link" id="preview-tab" data-toggle="tab" href="#preview" role="tab"
 					aria-controls="preview" aria-selected="false">Preview</a>
 			</li>
+			<li class="nav-item" role="presentation">
+				<a class="nav-link" id="diff-tab" data-toggle="tab" href="#diff" role="tab"
+					aria-controls="diff" aria-selected="false">Diff</a>
+			</li>
+			<li class="nav-item" role="presentation">
+				<a class="nav-link" id="meta-tab" data-toggle="tab" href="#meta" role="tab"
+					aria-controls="meta" aria-selected="false">Meta</a>
+			</li>
 		</ul>
 		<div class="mt-4 tab-content">
 			<div class="tab-pane fade show active" id="write" role="tabpanel" aria-labelledby="write-tab">
-				<textarea id="content" class="form-control wiki-content" name="content" rows="30">{{ code }}</textarea>
+				<div class="wiki-write"></div>
+
 			</div>
 			<div class="tab-pane fade" id="preview" role="tabpanel" aria-labelledby="preview-tab">
 				<div class="from-markdown wiki-preview"></div>
+			</div>
+			<div class="tab-pane fade" id="diff" role="tabpanel" aria-labelledby="preview-tab">
+				<div class="wiki-diff"></div>
 			</div>
 		</div>
 	</div>
@@ -45,39 +60,26 @@
 	</div>
 	<button type="submit" class="btn btn-primary">Save Page</button>
 </form>
+</div>
 {% endblock %}
 
 
 
 
 
-{%- block script -%}
+<!-- {%- block script -%}
 <script>
-	frappe.ready(() => {
-		$('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-            debugger
-			let activeTab = $(e.target);
-
-			if (activeTab.prop('id') === 'preview-tab') {
-                console.log("in")
-				let content = $('textarea#content').val();
-				let $preview = $('.wiki-preview');
-				$preview.html('Loading preview...');
-				frappe.call({
-                    method: 'wiki.www.edit.preview', 
-                    args : {
-                        content : content,
-                        path : window.location.search
-                    },
-                    callback: r => {
-                        if (r.message) {
-                            $preview.html(r.message);
-                        }
-                    }
-                })
-                
-			}
-		})
-	})
+	// render_preview()
 </script>
-{%- endblock -%}
+{%- endblock -%} -->
+
+
+{% block base_scripts %}
+<!-- js should be loaded in body! -->
+<script type="text/javascript" src="/assets/frappe/js/lib/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="/assets/js/frappe-web.min.js"></script>
+<script type="text/javascript" src="/assets/js/control.min.js"></script>
+<script type="text/javascript" src="/assets/js/dialog.min.js"></script>
+<script type="text/javascript" src="/assets/js/bootstrap-4-web.min.js"></script>
+<script src="edit.js"></script>
+{% endblock %}
