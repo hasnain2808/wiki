@@ -4,6 +4,7 @@
 from __future__ import unicode_literals
 import frappe
 from frappe.website.router import resolve_route
+from ghdiff import diff
 
 
 def get_context(context):
@@ -84,6 +85,16 @@ def preview(content, path):
 	# if route.template.endswith('.md'):
 	content= frappe.utils.md_to_html(content)
 	jenv = frappe.get_jenv()
+
+	if route.page_or_generator == "Generator":
+		code = route.doc.content
+	elif route.page_or_generator == "Page":
+		source = jenv.loader.get_source(jenv, route.template)[0]
+		code = source
+	
+	old_code = frappe.utils.md_to_html(code)
+
+
 	route.docs_base_url = '/docs'
 	# print(route)
 	# frappe.local.path = path
@@ -95,12 +106,15 @@ def preview(content, path):
 	source = jenv.from_string(content, route)
 	print("source")
 	print(source.render())
-	return source.render()
+	response = {
+		"diff": diff(old_code, content),
+		"html": source.render()
+	}
+	return response
 
 
-
-@frappe.whitelist(methods=["POST"])
-def update( route, content, edit_message):
+@frappe.whitelist()
+def update( route, content, edit_message_short, edit_message_long):
 	upd_req = frappe.new_doc("WebPage Update Request")
 	upd_req.new_code = content
 	upd_req.status = 'Unapproved'
