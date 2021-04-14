@@ -20,7 +20,8 @@
   "orignal_preview_store",
   "new_preview_store",
   "raised_by",
-  "pull_request"
+  "pull_request",
+  "new"
  ],
  "fields": [
   {
@@ -109,11 +110,16 @@
    "fieldtype": "Link",
    "label": "Pull Request",
    "options": "Pull Request"
+  },
+  {
+  "fieldname": "new",
+  "fieldtype": "Check",
+  "label": "New"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2021-04-14 12:07:09.030461",
+ "modified": "2021-04-14 12:07:09.030462",
  "modified_by": "Administrator",
  "module": "Wiki",
  "name": "Pull Request Route",

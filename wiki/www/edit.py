@@ -6,79 +6,41 @@ import frappe
 from frappe.website.router import resolve_route
 from ghdiff import diff
 import json
+import re
 
 def get_context(context):
-	# res = frappe.db.get_all(
-	# 	"Wiki Page",
-	# 	filters={"route": ("is", "set")},
-	# 	fields=["name", "route"],
-	# 	order_by="creation asc",
-	# 	limit=1,
-	# )
-	# wiki_page = res[0] if res else None
-	# # find and route to the first wiki page
-	# if wiki_page:
-	# 	frappe.response.location = wiki_page.route
-	# 	frappe.response.type = "redirect"
-	# 	raise frappe.Redirect
-
-
-	# if frappe.form_dict.edit:
-	print("frappe.form_dict.edit")
-	print(frappe.form_dict.edit)
-	print(resolve_route(frappe.form_dict.edit[1:]))
-	# route = resolve_route(frappe.form_dict.edit[1:])
 	context.route = frappe.form_dict.edit
-	# context.title = "Editing "
-	# if route.page_or_generator == "Generator":
-	# 	context.code = route.doc.content
-	# elif route.page_or_generator == "Page":
-	# 	jenv = frappe.get_jenv()
-	# 	source = jenv.loader.get_source(jenv, route.template)[0]
-	# 	context.code = source
 	return
 
 @frappe.whitelist()
 def get_code(route):
-	# res = frappe.db.get_all(
-	# 	"Wiki Page",
-	# 	filters={"route": ("is", "set")},
-	# 	fields=["name", "route"],
-	# 	order_by="creation asc",
-	# 	limit=1,
-	# )
-	# wiki_page = res[0] if res else None
-	# # find and route to the first wiki page
-	# if wiki_page:
-	# 	frappe.response.location = wiki_page.route
-	# 	frappe.response.type = "redirect"
-	# 	raise frappe.Redirect
-
-
-	# if frappe.form_dict.edit:
-	print("route")
-	print(route)
-	print(resolve_route(route[1:]))
 	route = resolve_route(route[1:])
+	jenv = frappe.get_jenv()
+
+	if not route:
+		return ''
 	if route.page_or_generator == "Generator":
-		code = route.doc.content
+		# code = route.doc.content
+		path = route.controller.split('.')
+		path[-1] = 'templates'
+		path.append(path[-2] + '.html')
+		path = '/'.join(path)
+		code=jenv.loader.get_source(jenv, path)[0]
 	elif route.page_or_generator == "Page":
-		jenv = frappe.get_jenv()
 		source = jenv.loader.get_source(jenv, route.template)[0]
 		code = source
 	return code
 
 @frappe.whitelist()
 def preview(content, path):
-	# content = r.content
-	print("path")
-	print(path)
-	# print(path[7:])
-	# print("resolve_route(path[7:])")
-	# print(resolve_route(path[7:]))
 	from frappe.website.context import get_context
 	# context = get_context(path[7:])
 	route = resolve_route(path[1:])
+	if not route:
+		return {
+		"diff": diff('', content),
+		"html": frappe.utils.md_to_html(content)
+	}
 	from frappe.website.context import  build_context
 	route.route = path[1:]
 	route.path = path[1:]
@@ -88,34 +50,33 @@ def preview(content, path):
 	jenv = frappe.get_jenv()
 
 	if route.page_or_generator == "Generator":
-		code = route.doc.content
+		# code = route.doc.content
+		path = route.controller.split('.')
+		path[-1] = 'templates'
+		path.append(path[-2] + '.html')
+		path = '/'.join(path)
+		code=jenv.loader.get_source(jenv, path)[0]
 	elif route.page_or_generator == "Page":
 		source = jenv.loader.get_source(jenv, route.template)[0]
 		code = source
 	
 	old_code = frappe.utils.md_to_html(code)
 
-
 	route.docs_base_url = '/docs'
-	# print(route)
-	# frappe.local.path = path
-	# context = get_context(route)
-		# jenv = frappe.get_jenv()
-		# source = jenv.loader.get_source(jenv, route.template)[0]
-		# context.code = source 
-	
 	source = jenv.from_string(content, route)
-	print("source")
-	print(source.render())
+
+	# (REMOVE HTML <STYLE> to </style> and variations)
+	pattern = r'<[ ]*script.*?\/[ ]*script[ ]*> || <[ ]*link.*?>'  # mach any char zero or more times
+	text = re.sub(pattern, '', source.render(), flags=(re.IGNORECASE | re.MULTILINE | re.DOTALL) | re.VERBOSE)
 	response = {
 		"diff": diff(old_code, content),
-		"html": source.render()
+		"html": text
 	}
 	return response
 
 
 @frappe.whitelist()
-def update( content, edit_message_short, edit_message_long, attachments=''):
+def update( content, edit_message_short, edit_message_long, attachments='{}'):
 	pull_req = frappe.new_doc("Pull Request")
 	pull_req.status = 'Unapproved'
 	pull_req.raised_by = frappe.session.user
@@ -135,18 +96,15 @@ def update( content, edit_message_short, edit_message_long, attachments=''):
 
 	
 	content = json.loads(content)
-	print(content.keys())
 	pull_req_route = {}
 	for route, change in content.items():
-		print(change)
 		pull_req_route[route] = frappe.new_doc("Pull Request Route")
 		pull_req_route[route].new_code = change
 		pull_req_route[route].web_route = route
 		pull_req_route[route].pull_request = pull_req.name
 		pull_req_route[route].save()
-	# print(json.dumps(content, indent=2, sort_keys=True))
 
-
+	pull_req.raise_pr()
 
 	# wiki_page = frappe.get_doc("Wiki Page", wiki_page)
 	# wiki_page.update_page(title, content, edit_message)
