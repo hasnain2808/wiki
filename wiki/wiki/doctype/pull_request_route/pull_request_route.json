@@ -19,17 +19,24 @@
   "new_preview",
   "orignal_preview_store",
   "new_preview_store",
-  "route"
-  ],
+  "raised_by",
+  "pull_request"
+ ],
  "fields": [
-
   {
-   "fieldname": "raised_by",
-   "fieldtype": "Link",
-   "label": "Raised By",
-   "options": "User"
+   "fieldname": "web_route",
+   "fieldtype": "Data",
+   "label": "Web Route"
   },
-
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "compare_changes_section",
+   "fieldtype": "Section Break",
+   "label": "Compare Changes"
+  },
   {
    "fieldname": "diff",
    "fieldtype": "Text",
@@ -43,13 +50,9 @@
    "options": "<div class=\"mt-6\">\n\t<div class=\"wiki-diff\">\n\t</div>\n</div>"
   },
   {
-   "fieldname": "column_break_3",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "compare_changes_section",
+   "fieldname": "code",
    "fieldtype": "Section Break",
-   "label": "Compare Changes"
+   "label": "Code"
   },
   {
    "fieldname": "orignal_code",
@@ -62,9 +65,9 @@
    "label": "New Code"
   },
   {
-   "fieldname": "code",
+   "fieldname": "previews_section",
    "fieldtype": "Section Break",
-   "label": "Code"
+   "label": "Orignal Preview Section"
   },
   {
    "fieldname": "orignal_preview",
@@ -73,15 +76,15 @@
    "options": "<div id=\"orignal_preview\" style=\"height: 300px; overflow: auto;\"></div>"
   },
   {
+   "fieldname": "new_preview_section_section",
+   "fieldtype": "Section Break",
+   "label": "New Preview Section"
+  },
+  {
    "fieldname": "new_preview",
    "fieldtype": "HTML",
    "label": "New Preview",
    "options": "<div id=\"new_preview\" style=\"height: 300px; overflow: auto;\"></div>"
-  },
-  {
-   "fieldname": "previews_section",
-   "fieldtype": "Section Break",
-   "label": "Orignal Preview Section"
   },
   {
    "fieldname": "orignal_preview_store",
@@ -96,29 +99,24 @@
    "label": "New Preview Store"
   },
   {
-   "fieldname": "web_route",
-   "fieldtype": "Data",
-   "label": "Web Route"
+   "fieldname": "raised_by",
+   "fieldtype": "Link",
+   "label": "Raised By",
+   "options": "User"
   },
   {
-   "fieldname": "route",
-   "fieldtype": "Data",
-   "label": "Route",
-   "unique": 1
-  },
-  {
-   "fieldname": "new_preview_section_section",
-   "fieldtype": "Section Break",
-   "label": "New Preview Section"
+   "fieldname": "pull_request",
+   "fieldtype": "Link",
+   "label": "Pull Request",
+   "options": "Pull Request"
   }
  ],
- "has_web_view": 1,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2021-04-13 22:29:17.591376",
+ "modified": "2021-04-14 12:07:09.030461",
  "modified_by": "Administrator",
  "module": "Wiki",
- "name": "WebPage Update Request",
+ "name": "Pull Request Route",
  "owner": "Administrator",
  "permissions": [
   {

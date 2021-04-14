@@ -71,16 +71,17 @@ def get_code(route):
 @frappe.whitelist()
 def preview(content, path):
 	# content = r.content
-	# print("path")
-	# print(path)
+	print("path")
+	print(path)
 	# print(path[7:])
 	# print("resolve_route(path[7:])")
 	# print(resolve_route(path[7:]))
 	from frappe.website.context import get_context
 	# context = get_context(path[7:])
-	route = resolve_route(path[7:])
+	route = resolve_route(path[1:])
 	from frappe.website.context import  build_context
-	route.path = route.route  = path[7:]
+	route.route = path[1:]
+	route.path = path[1:]
 	route = build_context(route)
 	# if route.template.endswith('.md'):
 	content= frappe.utils.md_to_html(content)
@@ -114,24 +115,38 @@ def preview(content, path):
 
 
 @frappe.whitelist()
-def update( route, content, edit_message_short, edit_message_long, attachments):
-	print(attachments)
-	upd_req = frappe.new_doc("WebPage Update Request")
-	upd_req.new_code = content
-	upd_req.status = 'Unapproved'
-	upd_req.web_route = route
-	upd_req.raised_by = frappe.session.user
-	upd_req.pr_title = edit_message_short
-	upd_req.pr_body = edit_message_long
-	upd_req.attachment_path_mapping = attachments
+def update( content, edit_message_short, edit_message_long, attachments=''):
+	pull_req = frappe.new_doc("Pull Request")
+	pull_req.status = 'Unapproved'
+	pull_req.raised_by = frappe.session.user
+	pull_req.pr_title = edit_message_short
+	pull_req.pr_body = edit_message_long
 
-	upd_req.save()
+	pull_req.attachment_path_mapping = attachments
+
+	pull_req.save()
 
 	for attachment in json.loads(attachments):
 		file = frappe.get_doc('File', attachment.get("name"))
-		file.attached_to_doctype = 'WebPage Update Request'
-		file.attached_to_name = upd_req.name
+		file.attached_to_doctype = 'Pull Request'
+		file.attached_to_name = pull_req.name
 		file.save()
+
+
+	
+	content = json.loads(content)
+	print(content.keys())
+	pull_req_route = {}
+	for route, change in content.items():
+		print(change)
+		pull_req_route[route] = frappe.new_doc("Pull Request Route")
+		pull_req_route[route].new_code = change
+		pull_req_route[route].web_route = route
+		pull_req_route[route].pull_request = pull_req.name
+		pull_req_route[route].save()
+	# print(json.dumps(content, indent=2, sort_keys=True))
+
+
 
 	# wiki_page = frappe.get_doc("Wiki Page", wiki_page)
 	# wiki_page.update_page(title, content, edit_message)

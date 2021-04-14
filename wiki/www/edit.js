@@ -1,5 +1,4 @@
 frappe.ready(async () => {
-  debugger;
   new EditAsset();
 });
 
@@ -38,6 +37,7 @@ frappe.ready(async () => {
 
 class EditAsset {
   constructor(opts) {
+    this.edited_files = {};
     this.make_code_field_group();
     this.make_edit_field_group();
     this.make_submit_section_field_group();
@@ -48,7 +48,6 @@ class EditAsset {
   render_preview() {
     // frappe.ready(() => {
     $('a[data-toggle="tab"]').on("shown.bs.tab", (e) => {
-      debugger;
       let activeTab = $(e.target);
 
       if (activeTab.prop("id") === "preview-tab") {
@@ -61,7 +60,7 @@ class EditAsset {
           method: "wiki.www.edit.preview",
           args: {
             content: this.code_field_group.get_value("code"),
-            path: window.location.search,
+            path: this.route,
           },
           callback: (r) => {
             if (r.message) {
@@ -95,6 +94,12 @@ class EditAsset {
           fieldtype: "Button",
           click: () => this.update_code(),
         },
+        {
+          label: __("Overwrite From Disk"),
+          fieldname: "code_from_disk",
+          fieldtype: "Button",
+          click: () => this.update_code(true),
+        },
       ],
       body: $(".routedisp"),
     });
@@ -118,13 +123,29 @@ class EditAsset {
     this.code_field_group.make();
   }
 
-  update_code() {
+  update_code(from_disk = false) {
+    const route = this.edit_field_group.get_value("route_link");
+    if (route === this.route && !from_disk) return;
+    if (route in this.edited_files && !from_disk) {
+      this.code_field_group
+        .get_field("code")
+        .set_value(this.edited_files[route]);
+      this.route = route;
+      return;
+    }
     frappe.call({
       method: "wiki.www.edit.get_code",
-      args: { route: this.edit_field_group.get_value("route_link") },
+      args: { route: route },
       callback: (r) => {
         console.log(r);
+        if (this.route)
+          this.edited_files[this.route] = this.code_field_group.get_value(
+            "code"
+          );
+        console.log(this.edited_files);
+        this.route = route;
         this.code_field_group.get_field("code").set_value(r.message);
+        this.build_file_table();
       },
     });
   }
@@ -158,11 +179,13 @@ class EditAsset {
   }
 
   raise_pr() {
+    if (this.route)
+      this.edited_files[this.route] = this.code_field_group.get_value("code");
     frappe.call({
       method: "wiki.www.edit.update",
       args: {
-        content: this.code_field_group.get_value("code"),
-        route: this.edit_field_group.get_value("route_link"),
+        content: this.edited_files,
+        // route: this.edit_field_group.get_value("route_link"),
         edit_message_short: this.submit_section_field_group.get_value(
           "edit_message_short"
         ),
@@ -170,7 +193,7 @@ class EditAsset {
           "edit_message_long"
         ),
 
-        attachments: this.attachments
+        attachments: this.attachments,
       },
       callback: (r) => {
         if (r.message) {
@@ -197,61 +220,89 @@ class EditAsset {
     new frappe.ui.FileUploader({
       folder: "Home/Attachments",
       on_success: (file_doc) => {
-        if (!this.attachments) this.attachments=[]
-        if (!this.save_paths) this.save_paths={}
-        this.attachments.push(file_doc)
-        console.log(this.attachments)
-        this.build_attachment_table()
+        if (!this.attachments) this.attachments = [];
+        if (!this.save_paths) this.save_paths = {};
+        this.attachments.push(file_doc);
+        console.log(this.attachments);
+        this.build_attachment_table();
       },
     });
   }
 
-  build_attachment_table(){
-    var wrapper = $('.wiki-attachment')
-    wrapper.empty()
+  build_attachment_table() {
+    var wrapper = $(".wiki-attachment");
+    wrapper.empty();
 
-    var table = $('<table class="table table-bordered" style="cursor:pointer; margin:0px;"><thead>\
-    <tr><th style="width: 33%">'+__('File Name')+'</th><th style="width: 33%">'+__('Current Path')+ '</th><th>'+__('Path While Submitting') +'</th></tr>\
-    </thead><tbody></tbody></table>').appendTo(wrapper);
-  $('<p class="text-muted small">' + __("Click table to edit") + '</p>').appendTo(wrapper);
+    var table = $(
+      '<table class="table table-bordered" style="cursor:pointer; margin:0px;"><thead>\
+	<tr><th style="width: 33%">' +
+        __("File Name") +
+        '</th><th style="width: 33%">' +
+        __("Current Path") +
+        "</th><th>" +
+        __("Path While Submitting") +
+        "</th></tr>\
+	</thead><tbody></tbody></table>"
+    ).appendTo(wrapper);
+    $(
+      '<p class="text-muted small">' + __("Click table to edit") + "</p>"
+    ).appendTo(wrapper);
 
-
-    this.attachments.forEach(f => {
-    const row = $("<tr></tr>").appendTo(table.find("tbody"));
-    $("<td>" + f.file_name + "</td>").appendTo(row);
-    $("<td>" + f.file_url + "</td>").appendTo(row);
-    $("<td>" + f.save_path +"</td>")
-      .appendTo(row);
-  });
-  var  me = this;
-  var dfs=[]
-  this.attachments.forEach(f =>{
-    dfs.push({
-      fieldname: f.file_name,
-      fieldtype: "Data",
-      label: f.file_name
-    })
-  })
-  table.on('click', function() {
-    var dialog = new frappe.ui.Dialog({
-      fields: dfs,
-      primary_action: function() {
-        var values = this.get_values();
-        if(values) {
-          this.hide();
-          // frm.set_value('filters', JSON.stringify(values));
-          me.save_paths = values
-          me.attachments.forEach(f => {
-            f.save_path = values[f.file_name]
-          })
-          console.log(values)
-          console.log(me.attachments)
-          me.build_attachment_table()
-        }
-      }
+    this.attachments.forEach((f) => {
+      const row = $("<tr></tr>").appendTo(table.find("tbody"));
+      $("<td>" + f.file_name + "</td>").appendTo(row);
+      $("<td>" + f.file_url + "</td>").appendTo(row);
+      $("<td>" + f.save_path + "</td>").appendTo(row);
     });
-    dialog.show();
-    dialog.set_values(me.save_paths);
-  })
+    var me = this;
+    var dfs = [];
+    this.attachments.forEach((f) => {
+      dfs.push({
+        fieldname: f.file_name,
+        fieldtype: "Data",
+        label: f.file_name,
+      });
+    });
+    table.on("click", function () {
+      var dialog = new frappe.ui.Dialog({
+        fields: dfs,
+        primary_action: function () {
+          var values = this.get_values();
+          if (values) {
+            this.hide();
+            // frm.set_value('filters', JSON.stringify(values));
+            me.save_paths = values;
+            me.attachments.forEach((f) => {
+              f.save_path = values[f.file_name];
+            });
+            console.log(values);
+            console.log(me.attachments);
+            me.build_attachment_table();
+          }
+        },
+      });
+      dialog.show();
+      dialog.set_values(me.save_paths);
+    });
+  }
+
+  build_file_table() {
+    var wrapper = $(".wiki-files");
+    wrapper.empty();
+    debugger;
+    var table = $(
+      '<table class="table table-bordered" style="cursor:pointer; margin:0px;"><thead>\
+	<tr><th>' +
+        __("Route") +
+        "</th></tr>\
+	</thead><tbody></tbody></table>"
+    ).appendTo(wrapper);
+
+    for (var file in this.edited_files) {
+      const row = $("<tr></tr>").appendTo(table.find("tbody"));
+      $("<td>" + file + "</td>").appendTo(row);
+    }
+    const row = $("<tr></tr>").appendTo(table.find("tbody"));
+    $("<td>" + this.route + "</td>").appendTo(row);
   }
 }
