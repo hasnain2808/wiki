@@ -11,6 +11,8 @@ import shutil
 from frappe.commands import popen
 import re
 import json
+from github import Github
+
 class PullRequest(Document):
 
 	def raise_pr(self):
@@ -56,13 +58,15 @@ class PullRequest(Document):
 		# print(frappe.get_pymodule_path(frappe.local.site))
 		# subprocess.run(['git', 'init', '-c', repository_base_path], shell=True)
 		git_init = 'git  -C ' + repository_base_path + ' init'
-		popen(git_init)
+		# popen(git_init)
+
+		attachments = json.loads(self.attachment_path_mapping)
 
 
 		for edit in edits:
 			print(edit.new)
-			for attachemt in attachments:
-				edit.new_code = edit.new_code.replace(f.file_url, attachment.save_path)
+			for attachment in attachments:
+				edit.new_code = edit.new_code.replace(attachment.get("file_url"), attachment.get("save_path"))
 
 			if edit.new:
 				f = open(repository_base_path + '/' + app + '/www' + edit.web_route + '.md' , "w")
@@ -97,8 +101,45 @@ class PullRequest(Document):
 					f.write(edit.new_code)
 					f.close()
 
-		attachments = json.laods(self.attachment_path_mapping)
 		for attachment in attachments:
-			print(os.getcwd() + '/' + frappe.local.site + '/' +  f.file_url)
-			print(repository_base_path + attachment.save_path.replace('{docs_base_url}', '/docs'))
-			shutil.copy( os.getcwd() + '/' + frappe.local.site + '/' +  f.file_url, repository_base_path + attachment.save_path.replace('{docs_base_url}', '/docs'))
+			shutil.copy( os.getcwd() + '/' + frappe.local.site + '/public' +  attachment.get("file_url"), repository_base_path + '/' + app + '/www' + attachment.get("save_path").replace('{{docs_base_url}}', '/docs'))
+
+		branch = repository
+		repository = frappe.get_doc('Repository', app)
+
+		popen(f'git -C {repository_base_path} remote rm upstream ')
+		
+		popen(f'git -C {repository_base_path} remote rm origin ')
+		
+		popen(f'git -C {repository_base_path} remote add origin {repository.origin}')
+		
+		popen(f'git -C {repository_base_path} remote add upstream {repository.upstream}')
+		
+		# popen(f'git -C {repository_base_path} checkout master')
+
+		popen(f'git -C {repository_base_path} branch {branch}')
+		
+		popen(f'git -C {repository_base_path} checkout {branch}')
+		
+		popen(f'git -C {repository_base_path} add .')
+		
+		popen(f'git -C {repository_base_path} commit -m "docs:{self.pr_title}" ')
+		
+		popen(f'git -C {repository_base_path} push origin {branch}')
+		
+		# popen(f'gh -C {repository_base_path} auth login --with-token {repository.token}')
+
+		# popen(f'gh -C {repository_base_path} pr create --title {self.pr_title} --body {self.pr_body} --head {branch} --base master')
+
+		print(repository.token)
+		print(repository.token)
+		g = Github('token')
+
+		upstream_repo = g.get_repo('frappe/erpnext_documentation')
+
+
+		# upstream_user = g.get_user('hasnain2808')
+		# upstream_repo = upstream_user.get_repo('tox')
+
+		upstream_pullrequest = upstream_repo.create_pull(self.pr_title, self.pr_body, 'master',
+				'{}:{}'.format('hasnain2808',branch ), True)
