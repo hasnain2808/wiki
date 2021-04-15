@@ -34,26 +34,27 @@ class PullRequestRoute(Document):
 			path[-1] = 'templates'
 			path.append(path[-2] + '.html')
 			path = '/'.join(path)
-			code=jenv.loader.get_source(jenv, path)[0]
+			self.orignal_code =jenv.loader.get_source(jenv, path)[0]
+			self.orignal_preview_store = self.orignal_code
+			self.new_preview_store = self.new_code
+
 		elif route.page_or_generator == "Page":
-			source = jenv.loader.get_source(jenv, route.template)[0]
-			code = source
-		self.orignal_code = code
-		self.diff = diff(code, self.new_code)
-		# route = resolve_route(self.web_route[1:])
-
-		route.docs_base_url = '/docs'
-		old_html= frappe.utils.md_to_html(self.orignal_code)
-		new_html= frappe.utils.md_to_html(self.new_code)
-
-		# pattern = r'<[ ]*script.*?\/[ ]*script[ ]*> || <[ ]*link.*?>'  # mach any char zero or more times
-		# text = re.sub(pattern, '', source.render(), flags=(re.IGNORECASE | re.MULTILINE | re.DOTALL))
+			self.orignal_code = jenv.loader.get_source(jenv, route.template)[0]
+			old_html = self.orignal_code
+			new_html = self.new_code
+			if route.template.endswith('.md'):
+				old_html= frappe.utils.md_to_html(self.orignal_code)
+				new_html= frappe.utils.md_to_html(self.new_code)
 	
+			route.docs_base_url = '/docs'
 
-		# self.orignal_preview_store = jenv.from_string(old_html, route)
-		# self.orignal_preview_store = re.sub(pattern, '', self.orignal_preview_store.render(), flags=(re.IGNORECASE | re.MULTILINE | re.DOTALL | re.VERBOSE))
-		# self.new_preview_store = jenv.from_string(new_html, route)
-		# self.new_preview_store = re.sub(pattern, '', self.new_preview_store.render(), flags=(re.IGNORECASE | re.MULTILINE | re.DOTALL | re.VERBOSE))
-	
+			pattern = r'<[ ]*script.*?\/[ ]*script[ ]*> || <[ ]*link.*?>'  # mach any char zero or more times
+		
 
-		# self.set_route()
+			self.orignal_preview_store = jenv.from_string(old_html, route)
+			self.orignal_preview_store = re.sub(pattern, '', self.orignal_preview_store.render(), flags=(re.IGNORECASE | re.MULTILINE | re.DOTALL | re.VERBOSE))
+			self.new_preview_store = jenv.from_string(new_html, route)
+			self.new_preview_store = re.sub(pattern, '', self.new_preview_store.render(), flags=(re.IGNORECASE | re.MULTILINE | re.DOTALL | re.VERBOSE))
+
+			self.diff = diff(self.orignal_code , self.new_code)
+

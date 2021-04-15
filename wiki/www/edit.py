@@ -46,7 +46,6 @@ def preview(content, path):
 	route.path = path[1:]
 	route = build_context(route)
 	# if route.template.endswith('.md'):
-	content= frappe.utils.md_to_html(content)
 	jenv = frappe.get_jenv()
 
 	if route.page_or_generator == "Generator":
@@ -55,22 +54,26 @@ def preview(content, path):
 		path[-1] = 'templates'
 		path.append(path[-2] + '.html')
 		path = '/'.join(path)
-		code=jenv.loader.get_source(jenv, path)[0]
+		old_code=jenv.loader.get_source(jenv, path)[0]
 	elif route.page_or_generator == "Page":
-		source = jenv.loader.get_source(jenv, route.template)[0]
-		code = source
+		old_code = jenv.loader.get_source(jenv, route.template)[0]
+
+		if route.template.endswith('.md'):
+			content= frappe.utils.md_to_html(content)
+			old_code = frappe.utils.md_to_html(old_code)
+
+
+		route.docs_base_url = '/docs'
+		content = jenv.from_string(content, route)
+		pattern = r'<[ ]*script.*?\/[ ]*script[ ]*> || <[ ]*link.*?>'  # mach any char zero or more times
+		content = re.sub(pattern, '', content.render(), flags=(re.IGNORECASE | re.MULTILINE | re.DOTALL) | re.VERBOSE)
+
 	
-	old_code = frappe.utils.md_to_html(code)
-
-	route.docs_base_url = '/docs'
-	source = jenv.from_string(content, route)
-
 	# (REMOVE HTML <STYLE> to </style> and variations)
-	pattern = r'<[ ]*script.*?\/[ ]*script[ ]*> || <[ ]*link.*?>'  # mach any char zero or more times
-	text = re.sub(pattern, '', source.render(), flags=(re.IGNORECASE | re.MULTILINE | re.DOTALL) | re.VERBOSE)
+
 	response = {
 		"diff": diff(old_code, content),
-		"html": text
+		"html": content
 	}
 	return response
 
