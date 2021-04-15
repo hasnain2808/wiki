@@ -10,7 +10,7 @@ import os
 import shutil
 from frappe.commands import popen
 import re
-
+import json
 class PullRequest(Document):
 
 	def raise_pr(self):
@@ -22,27 +22,28 @@ class PullRequest(Document):
 			fields=['name', 'new_code', 'web_route', 'new']	
 		)
 		# print(edits)
-		app = None
-		for edit in edits:
-			print(edit.new)
-			if not edit.new:
-				resolved_route = resolve_route(edit.web_route[1:])
-				print(resolved_route)
-				print(hasattr(resolved_route,"controller"))
-				print(hasattr(resolved_route,"controller_path"))
-				if resolved_route.get("controller"):
-					app = resolved_route.controller.split('.')[0]
-					break
+		# app = None
+		# for edit in edits:
+		# 	print(edit.new)
+		# 	if not edit.new:
+		# 		resolved_route = resolve_route(edit.web_route[1:])
+		# 		print(resolved_route)
+		# 		print(hasattr(resolved_route,"controller"))
+		# 		print(hasattr(resolved_route,"controller_path"))
+		# 		if resolved_route.get("controller"):
+		# 			app = resolved_route.controller.split('.')[0]
+		# 			break
 					
-				elif resolved_route.get("controller_path"):
-					splits = resolved_route.controller_path.split('/')
-					app = splits[splits.index('apps') + 1]
-					break
-		if not app:
-			# frappe.throw("app not found")
-			app = 'erpnext_documentation'
+		# 		elif resolved_route.get("controller_path"):
+		# 			splits = resolved_route.controller_path.split('/')
+		# 			app = splits[splits.index('apps') + 1]
+		# 			break
+		# if not app:
+		# 	# frappe.throw("app not found")
+		# 	app = 'erpnext_documentation'
 
-		
+		app = self.repository
+
 
 		print(app)
 		print(frappe.get_app_path(app))
@@ -56,8 +57,13 @@ class PullRequest(Document):
 		# subprocess.run(['git', 'init', '-c', repository_base_path], shell=True)
 		git_init = 'git  -C ' + repository_base_path + ' init'
 		popen(git_init)
+
+
 		for edit in edits:
 			print(edit.new)
+			for attachemt in attachments:
+				edit.new_code = edit.new_code.replace(f.file_url, attachment.save_path)
+
 			if edit.new:
 				f = open(repository_base_path + '/' + app + '/www' + edit.web_route + '.md' , "w")
 				f.write(edit.new_code)
@@ -91,3 +97,8 @@ class PullRequest(Document):
 					f.write(edit.new_code)
 					f.close()
 
+		attachments = json.laods(self.attachment_path_mapping)
+		for attachment in attachments:
+			print(os.getcwd() + '/' + frappe.local.site + '/' +  f.file_url)
+			print(repository_base_path + attachment.save_path.replace('{docs_base_url}', '/docs'))
+			shutil.copy( os.getcwd() + '/' + frappe.local.site + '/' +  f.file_url, repository_base_path + attachment.save_path.replace('{docs_base_url}', '/docs'))

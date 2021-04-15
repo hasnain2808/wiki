@@ -12,7 +12,8 @@
   "pull_request_section",
   "pr_title",
   "pr_body",
-  "pr_link"
+  "pr_link",
+  "repository"
  ],
  "fields": [
   {
@@ -22,47 +23,53 @@
    "options": "User"
   },
   {
-    "fieldname": "approved_by",
-    "fieldtype": "Link",
-    "label": "Approved By",
-    "options": "User"
-   },
-   {
-    "fieldname": "status",
-    "fieldtype": "Select",
-    "label": "Status",
-    "options": "Unapproved\nApproved"
-   },
-   {
-    "fieldname": "attachment_path_mapping",
-    "fieldtype": "Text",
-    "hidden": 1,
-    "label": "Attachment Path Mapping"
-   },
-   {
-    "fieldname": "pull_request_section",
-    "fieldtype": "Section Break",
-    "label": "Pull Request"
-   },
-   {
-    "fieldname": "pr_title",
-    "fieldtype": "Data",
-    "label": "PR Title"
-   },
-   {
-    "fieldname": "pr_body",
-    "fieldtype": "Text",
-    "label": "PR Body"
-   },
-   {
-    "fieldname": "pr_link",
-    "fieldtype": "Data",
-    "label": "PR Link"
-   }
+   "fieldname": "approved_by",
+   "fieldtype": "Link",
+   "label": "Approved By",
+   "options": "User"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Unapproved\nApproved"
+  },
+  {
+   "fieldname": "attachment_path_mapping",
+   "fieldtype": "Text",
+   "hidden": 1,
+   "label": "Attachment Path Mapping"
+  },
+  {
+   "fieldname": "pull_request_section",
+   "fieldtype": "Section Break",
+   "label": "Pull Request"
+  },
+  {
+   "fieldname": "pr_title",
+   "fieldtype": "Data",
+   "label": "PR Title"
+  },
+  {
+   "fieldname": "pr_body",
+   "fieldtype": "Text",
+   "label": "PR Body"
+  },
+  {
+   "fieldname": "pr_link",
+   "fieldtype": "Data",
+   "label": "PR Link"
+  },
+  {
+   "fieldname": "repository",
+   "fieldtype": "Link",
+   "label": "Repository",
+   "options": "Repository"
+  }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2021-04-14 11:55:57.240044",
+ "modified": "2021-04-15 14:59:22.051248",
  "modified_by": "Administrator",
  "module": "Wiki",
  "name": "Pull Request",
