@@ -140,3 +140,18 @@ class PullRequest(WebsiteGenerator):
 			shutil.rmtree(repository_base_path)
 		except:
 			frappe.msgprint('Error while deleting directory')
+
+def update_pr_status():
+	# frappe.db.get_all("Pull Request")
+	repository = frappe.get_doc('Repository', "erpnext_documentation")
+	g = Github(repository.get_password('token'))
+	print(g)
+	print('/'.join(repository.upstream.split('/')[3:5] ))
+	repo = g.get_repo('/'.join(repository.upstream.split('/')[3:5] ))
+	# repo = g.get_repo()
+	for pr in frappe.db.get_all("Pull Request", fields = ["name", "pr_link"]):
+		if pr.pr_link:
+			gh_pr = repo.get_pull(int(pr.pr_link.split('/')[-1]))
+			status = "Approved" if gh_pr.merged else "Unapproved"
+			frappe.db.update("Pull Request", pr.name, "status", status)
+	frappe.db.commit()

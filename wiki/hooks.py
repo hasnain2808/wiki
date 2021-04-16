@@ -102,23 +102,11 @@ after_install = "wiki.install.after_install"
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
-# 	"all": [
-# 		"wiki.tasks.all"
-# 	],
-# 	"daily": [
-# 		"wiki.tasks.daily"
-# 	],
-# 	"hourly": [
-# 		"wiki.tasks.hourly"
-# 	],
-# 	"weekly": [
-# 		"wiki.tasks.weekly"
-# 	]
-# 	"monthly": [
-# 		"wiki.tasks.monthly"
-# 	]
-# }
+scheduler_events = {
+	"hourly": [
+		"wiki.wiki.doctype.pull_request.pull_request.update_pr_status"
+	],
+}
 
 # Testing
 # -------
