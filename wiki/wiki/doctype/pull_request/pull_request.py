@@ -85,12 +85,6 @@ class PullRequest(Document):
 					path.append(path[-2] + '.html')
 					path = '/'.join(path)
 					code=jenv.loader.get_source(jenv, path)[0]
-					print("app")
-					print(app)
-					print("repository_base_path")
-					print(repository_base_path)
-					print("path")
-					print(path)
 					f = open(repository_base_path  + '/' + path , "w")
 					f.write(edit.new_code)
 					f.close()
@@ -108,38 +102,34 @@ class PullRequest(Document):
 		repository = frappe.get_doc('Repository', app)
 
 		popen(f'git -C {repository_base_path} remote rm upstream ')
-		
 		popen(f'git -C {repository_base_path} remote rm origin ')
-		
 		popen(f'git -C {repository_base_path} remote add origin {repository.origin}')
-		
 		popen(f'git -C {repository_base_path} remote add upstream {repository.upstream}')
-		
-		# popen(f'git -C {repository_base_path} checkout master')
-
 		popen(f'git -C {repository_base_path} branch {branch}')
-		
 		popen(f'git -C {repository_base_path} checkout {branch}')
-		
 		popen(f'git -C {repository_base_path} add .')
-		
 		popen(f'git -C {repository_base_path} commit -m "docs:{self.pr_title}" ')
-		
 		popen(f'git -C {repository_base_path} push origin {branch}')
-		
+
 		# popen(f'gh -C {repository_base_path} auth login --with-token {repository.token}')
 
 		# popen(f'gh -C {repository_base_path} pr create --title {self.pr_title} --body {self.pr_body} --head {branch} --base master')
 
 		print(repository.token)
 		print(repository.token)
-		g = Github('token')
+		g = Github("token")
 
-		upstream_repo = g.get_repo('frappe/erpnext_documentation')
+		upstream_repo = g.get_repo('/'.join(repository.upstream.split('/')[3:5] ))
 
 
 		# upstream_user = g.get_user('hasnain2808')
 		# upstream_repo = upstream_user.get_repo('tox')
 
 		upstream_pullrequest = upstream_repo.create_pull(self.pr_title, self.pr_body, 'master',
-				'{}:{}'.format('hasnain2808',branch ), True)
+				'{}:{}'.format(repository.origin.split('/')[3],branch ), True)
+		print(upstream_pullrequest.number)
+		upstream = repository.upstream.replace('.git', '/') #if repository.upstream.contains('.git') else repository.upstream
+		self.pr_link = f'{upstream}/pull/{upstream_pullrequest.number}'
+		print(self.pr_link)
+		self.save()
+		# frappe.db.commit(
