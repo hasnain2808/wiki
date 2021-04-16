@@ -13,7 +13,9 @@
   "pr_title",
   "pr_body",
   "pr_link",
-  "repository"
+  "repository",
+  "route",
+  "published"
  ],
  "fields": [
   {
@@ -65,11 +67,24 @@
    "fieldtype": "Link",
    "label": "Repository",
    "options": "Repository"
+  },
+  {
+   "fieldname": "route",
+   "fieldtype": "Small Text",
+   "label": "Route"
+  },
+  {
+   "default": "1",
+   "fieldname": "published",
+   "fieldtype": "Check",
+   "label": "Published"
   }
  ],
+ "has_web_view": 1,
  "index_web_pages_for_search": 1,
+ "is_published_field": "published",
  "links": [],
- "modified": "2021-04-15 14:59:22.051248",
+ "modified": "2021-04-16 14:20:17.753936",
  "modified_by": "Administrator",
  "module": "Wiki",
  "name": "Pull Request",
@@ -88,6 +103,7 @@
    "write": 1
   }
  ],
+ "route": "pull-request",
  "sort_field": "modified",
  "sort_order": "DESC",
  "track_changes": 1,

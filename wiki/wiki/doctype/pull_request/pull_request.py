@@ -4,7 +4,7 @@
 
 from __future__ import unicode_literals
 import frappe
-from frappe.model.document import Document
+from frappe.website.website_generator import WebsiteGenerator
 from frappe.website.router import resolve_route
 import os
 import shutil
@@ -13,7 +13,10 @@ import re
 import json
 from github import Github
 
-class PullRequest(Document):
+class PullRequest(WebsiteGenerator):
+
+	def validate(self):
+		self.set_route()
 
 	def raise_pr(self):
 		jenv = frappe.get_jenv()
@@ -128,8 +131,12 @@ class PullRequest(Document):
 		upstream_pullrequest = upstream_repo.create_pull(self.pr_title, self.pr_body, 'master',
 				'{}:{}'.format(repository.origin.split('/')[3],branch ), True)
 		print(upstream_pullrequest.number)
-		upstream = repository.upstream.replace('.git', '/') #if repository.upstream.contains('.git') else repository.upstream
+		upstream = repository.upstream.replace('.git', '/')
 		self.pr_link = f'{upstream}/pull/{upstream_pullrequest.number}'
 		print(self.pr_link)
 		self.save()
-		# frappe.db.commit(
+
+		try:
+			shutil.rmtree(repository_base_path)
+		except:
+			frappe.msgprint('Error while deleting directory')

@@ -111,6 +111,6 @@ def update( content, edit_message_short, edit_message_long, repository, attachme
 	# wiki_page = frappe.get_doc("Wiki Page", wiki_page)
 	# wiki_page.update_page(title, content, edit_message)
 
-	frappe.response.location = "/webpage-update/"
+	frappe.response.location = "/pull-request/"
 	frappe.response.type = "redirect"
 	
