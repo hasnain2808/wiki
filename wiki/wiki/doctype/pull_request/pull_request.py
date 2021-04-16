@@ -117,7 +117,7 @@ class PullRequest(Document):
 
 		print(repository.token)
 		print(repository.token)
-		g = Github("token")
+		g = Github(repository.get_password('token'))
 
 		upstream_repo = g.get_repo('/'.join(repository.upstream.split('/')[3:5] ))
 
