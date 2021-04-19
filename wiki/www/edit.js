@@ -17,7 +17,10 @@ class EditAsset {
     $('a[data-toggle="tab"]').on("shown.bs.tab", (e) => {
       let activeTab = $(e.target);
 
-      if (activeTab.prop("id") === "preview-tab") {
+      if (
+        activeTab.prop("id") === "preview-tab" ||
+        activeTab.prop("id") === "diff-tab"
+      ) {
         console.log("in");
         let content = $("textarea#content").val();
         let $preview = $(".wiki-preview");
@@ -145,8 +148,11 @@ class EditAsset {
         attachments: this.attachments,
       },
       callback: (r) => {
-				window.location.href = '/pull-request'
-				frappe.show_alert('A Change Request has been generated. You can track your requests here after a few mins', 5);
+        window.location.href = "/pull-request";
+        frappe.show_alert(
+          "A Change Request has been generated. You can track your requests here after a few mins",
+          5
+        );
       },
     });
   }
@@ -205,9 +211,9 @@ class EditAsset {
     table.on("click", () => this.table_click_handler());
   }
 
-	table_click_handler(){
+  table_click_handler() {
     var me = this;
-		var dfs = [];
+    var dfs = [];
     this.attachments.forEach((f) => {
       dfs.push({
         fieldname: f.file_name,
@@ -215,26 +221,26 @@ class EditAsset {
         label: f.file_name,
       });
     });
-		let dialog = new frappe.ui.Dialog({
-			fields: dfs,
-			primary_action: function () {
-				var values = this.get_values();
-				if (values) {
-					this.hide();
-					// frm.set_value('filters', JSON.stringify(values));
-					me.save_paths = values;
-					me.attachments.forEach((f) => {
-						f.save_path = values[f.file_name];
-					});
-					console.log(values);
-					console.log(me.attachments);
-					me.build_attachment_table();
-				}
-			},
-		});
-		dialog.show();
-		dialog.set_values(me.save_paths);
-	}
+    let dialog = new frappe.ui.Dialog({
+      fields: dfs,
+      primary_action: function () {
+        var values = this.get_values();
+        if (values) {
+          this.hide();
+          // frm.set_value('filters', JSON.stringify(values));
+          me.save_paths = values;
+          me.attachments.forEach((f) => {
+            f.save_path = values[f.file_name];
+          });
+          console.log(values);
+          console.log(me.attachments);
+          me.build_attachment_table();
+        }
+      },
+    });
+    dialog.show();
+    dialog.set_values(me.save_paths);
+  }
 
   build_file_table() {
     var wrapper = $(".wiki-files");
