@@ -38,7 +38,10 @@ class PullRequest(WebsiteGenerator):
 
 	def set_vars(self):
 		self.jenv = frappe.get_jenv()
-		self.app = "erpnext_documentation"
+		repository = frappe.get_all("Repository", [["enabled","=","true"]])
+		if not repository:
+			frappe.throw("No active repositories found, contact System Manager")
+		self.app = repository[0]["name"]
 		self.repository = frappe.get_doc("Repository", self.app)
 		self.uuid = frappe.generate_hash()
 		self.repository_base_path = f"{os.getcwd()}/{frappe.local.site}/private/{self.uuid}"

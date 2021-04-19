@@ -8,6 +8,7 @@ from ghdiff import diff
 import json
 import re
 from frappe.website.context import build_context
+from frappe.utils.background_jobs import enqueue
 
 
 def get_context(context):
@@ -72,7 +73,33 @@ def clean_js_css(route, content, jenv):
 def update(
 	content, attachments="{}"
 ):
-	repository = 'erpnext_documentation'
+	from frappe.core.page.background_jobs.background_jobs import get_info
+	from frappe.utils.scheduler import is_scheduler_inactive
+
+	if is_scheduler_inactive() and not frappe.flags.in_test:
+		frappe.throw(
+			_("Scheduler is inactive. Cannot Edit Docs."), title=_("Scheduler Inactive")
+		)
+
+	enqueued_jobs = [d.get("job_name") for d in get_info()]
+
+	enqueue(
+		_update,
+		queue="default",
+		timeout=6000,
+		event="_update",
+		job_name=frappe.generate_hash(),
+		content=content,
+		attachments=attachments,
+		now=0#frappe.conf.developer_mode or frappe.flags.in_test,
+	)
+	return True
+
+def _update(content, attachments="{}"):
+	repository = frappe.get_all("Repository", [["enabled","=","1"]])
+	if not repository:
+		frappe.throw("No active repositories found, contact System Manager")
+	repository = repository[0]["name"]
 	pull_req = frappe.new_doc("Pull Request")
 
 
@@ -95,9 +122,6 @@ def update(
 	create_edited_files(content, pull_req.name, attachments)
 
 	pull_req.raise_pr()
-
-	frappe.response.location = "/pull-request/"
-	frappe.response.type = "redirect"
 
 
 def update_file_links(attachments, name):

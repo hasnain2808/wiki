@@ -145,10 +145,8 @@ class EditAsset {
         attachments: this.attachments,
       },
       callback: (r) => {
-        if (r.message) {
-          $preview.html(r.message.html);
-          $diff.html(r.message.diff);
-        }
+				window.location.href = '/pull-request'
+				frappe.show_alert('A Change Request has been generated. You can track your requests here after a few mins', 5);
       },
     });
   }

@@ -9,7 +9,8 @@
   "frappe_app",
   "upstream",
   "origin",
-  "token"
+  "token",
+  "enabled"
  ],
  "fields": [
   {
@@ -32,11 +33,17 @@
    "fieldname": "token",
    "fieldtype": "Password",
    "label": "Token"
+  },
+  {
+   "default": "0",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "label": "Enabled"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2021-04-15 17:39:16.640516",
+ "modified": "2021-04-19 17:19:33.243802",
  "modified_by": "Administrator",
  "module": "Wiki",
  "name": "Repository",
