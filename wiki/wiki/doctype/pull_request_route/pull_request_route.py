@@ -3,38 +3,31 @@
 # For license information, please see license.txt
 
 from __future__ import unicode_literals
+
 # import frappe
 from frappe.model.document import Document
 import frappe
 from ghdiff import diff
 from frappe.website.router import resolve_route
 import re
-from frappe.website.context import  build_context
+from frappe.website.context import build_context
+from wiki.www.edit import clean_js_css, get_source_generator
+
 
 class PullRequestRoute(Document):
 	def validate(self):
 		jenv = frappe.get_jenv()
 		route = resolve_route(self.web_route[1:])
 		if not route:
-			self.orignal_code = ''
-			self.diff = diff(self.orignal_code, self.new_code)
-			old_html= frappe.utils.md_to_html(self.orignal_code)
-			new_html= frappe.utils.md_to_html(self.new_code)
-			self.new=1
-			self.orignal_preview_store = ''
-			self.new_preview_store = new_html
+			self.validate_new_file()
 			return
+
 		route.route = self.web_route[1:]
 		route.path = self.web_route[1:]
 		route = build_context(route)
 
 		if route.page_or_generator == "Generator":
-			# code = route.doc.content
-			path = route.controller.split('.')
-			path[-1] = 'templates'
-			path.append(path[-2] + '.html')
-			path = '/'.join(path)
-			self.orignal_code =jenv.loader.get_source(jenv, path)[0]
+			self.orignal_code = get_source_generator(route, jenv)
 			self.orignal_preview_store = self.orignal_code
 			self.new_preview_store = self.new_code
 
@@ -42,19 +35,23 @@ class PullRequestRoute(Document):
 			self.orignal_code = jenv.loader.get_source(jenv, route.template)[0]
 			old_html = self.orignal_code
 			new_html = self.new_code
-			if route.template.endswith('.md'):
-				old_html= frappe.utils.md_to_html(self.orignal_code)
-				new_html= frappe.utils.md_to_html(self.new_code)
-	
-			route.docs_base_url = '/docs'
+			if route.template.endswith(".md"):
+				old_html = frappe.utils.md_to_html(self.orignal_code)
+				new_html = frappe.utils.md_to_html(self.new_code)
 
-			pattern = r'<[ ]*script.*?\/[ ]*script[ ]*> || <[ ]*link.*?>'  # mach any char zero or more times
-		
+			self.orignal_preview_store = clean_js_css(route, old_html,  jenv)
+			self.new_preview_store = clean_js_css(route, old_html, jenv)
 
-			self.orignal_preview_store = jenv.from_string(old_html, route)
-			self.orignal_preview_store = re.sub(pattern, '', self.orignal_preview_store.render(), flags=(re.IGNORECASE | re.MULTILINE | re.DOTALL | re.VERBOSE))
-			self.new_preview_store = jenv.from_string(new_html, route)
-			self.new_preview_store = re.sub(pattern, '', self.new_preview_store.render(), flags=(re.IGNORECASE | re.MULTILINE | re.DOTALL | re.VERBOSE))
+		self.set_diff()
 
-			self.diff = diff(self.orignal_code , self.new_code)
+	def validate_new_file(self):
+		self.orignal_code = ""
+		self.diff = diff(self.orignal_code, self.new_code)
+		old_html = frappe.utils.md_to_html(self.orignal_code)
+		new_html = frappe.utils.md_to_html(self.new_code)
+		self.new = 1
+		self.orignal_preview_store = ""
+		self.new_preview_store = new_html
 
+	def set_diff(self):
+		self.diff = diff(self.orignal_code, self.new_code)

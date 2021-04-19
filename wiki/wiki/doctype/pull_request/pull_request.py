@@ -12,146 +12,129 @@ from frappe.commands import popen
 import re
 import json
 from github import Github
+from wiki.www.edit import  get_source_generator
+
 
 class PullRequest(WebsiteGenerator):
-
 	def validate(self):
 		self.set_route()
 
 	def raise_pr(self):
-		jenv = frappe.get_jenv()
+		self.set_vars()
+		self.setup_repo()
+		self.load_attachments()
+		self.save_files()
+		self.save_attachments()
+		self.git_set_remotes()
+		self.git_push()
+		self._raise_pr()
+		self.cleanup()
 
-		edits = frappe.get_all(
-			'Pull Request Route', 
-			filters=[['pull_request','=', self.name]],
-			fields=['name', 'new_code', 'web_route', 'new']	
+	def setup_repo(self):
+		shutil.copytree(
+			"/".join(frappe.get_app_path(self.app).split("/")[:-1]),
+			f"{self.repository_base_path}/",
 		)
-		# print(edits)
-		# app = None
-		# for edit in edits:
-		# 	print(edit.new)
-		# 	if not edit.new:
-		# 		resolved_route = resolve_route(edit.web_route[1:])
-		# 		print(resolved_route)
-		# 		print(hasattr(resolved_route,"controller"))
-		# 		print(hasattr(resolved_route,"controller_path"))
-		# 		if resolved_route.get("controller"):
-		# 			app = resolved_route.controller.split('.')[0]
-		# 			break
-					
-		# 		elif resolved_route.get("controller_path"):
-		# 			splits = resolved_route.controller_path.split('/')
-		# 			app = splits[splits.index('apps') + 1]
-		# 			break
-		# if not app:
-		# 	# frappe.throw("app not found")
-		# 	app = 'erpnext_documentation'
 
-		app = self.repository
+	def set_vars(self):
+		self.jenv = frappe.get_jenv()
+		self.app = "erpnext_documentation"
+		self.repository = frappe.get_doc("Repository", self.app)
+		self.uuid = frappe.generate_hash()
+		self.repository_base_path = f"{os.getcwd()}/{frappe.local.site}/private/{self.uuid}"
 
-
-		print(app)
-		print(frappe.get_app_path(app))
-		print(frappe.local.site)
-		print(os.getcwd())
-		repository = frappe.generate_hash()
-		repository_base_path=os.getcwd() + '/' + frappe.local.site + '/private/' + repository
-		# os.makedirs(repository_base_path)
-		shutil.copytree('/'.join(frappe.get_app_path(app).split('/')[:-1]), repository_base_path + '/')
-		# print(frappe.get_pymodule_path(frappe.local.site))
-		# subprocess.run(['git', 'init', '-c', repository_base_path], shell=True)
-		git_init = 'git  -C ' + repository_base_path + ' init'
-		# popen(git_init)
-
-		attachments = json.loads(self.attachment_path_mapping)
-
+	def save_files(self):
+		print(self.name)
+		edits = frappe.get_all(
+			"Pull Request Route",
+			filters=[["pull_request", "=", self.name]],
+			fields=["name", "new_code", "web_route", "new"],
+		)
 
 		for edit in edits:
-			print(edit.new)
-			for attachment in attachments:
-				edit.new_code = edit.new_code.replace(attachment.get("file_url"), attachment.get("save_path"))
+			self.save_file(edit)
 
-			if edit.new:
-				f = open(repository_base_path + '/' + app + '/www' + edit.web_route + '.md' , "w")
-				f.write(edit.new_code)
-				f.close()
-			else:
-				print(edit.web_route[1:])
-				print("edit.web_route[1:]")
-				resolved_route = resolve_route(edit.web_route[1:])
-				print(resolved_route.page_or_generator)
-				print("resolved_route.page_or_generator")
-				if resolved_route.page_or_generator == "Generator":
-					# code = route.doc.content
-					path = resolved_route.controller.split('.')
-					path[-1] = 'templates'
-					path.append(path[-2] + '.html')
-					path = '/'.join(path)
-					code=jenv.loader.get_source(jenv, path)[0]
-					f = open(repository_base_path  + '/' + path , "w")
-					f.write(edit.new_code)
-					f.close()
-				elif resolved_route.page_or_generator == "Page":
-					# source = jenv.loader.get_source(jenv, route.template)[0]
-					# code = source
-					f = open(repository_base_path + '/' + app + '/' + resolved_route.template , "w")
-					f.write(edit.new_code)
-					f.close()
+	def save_file(self, edit):
+		if edit.new:
+			path = f"{self.repository_base_path}/{self.app}/www{edit.web_route}.md"
+		else:
+			resolved_route = resolve_route(edit.web_route[1:])
+			if resolved_route.page_or_generator == "Generator":
+				path = f"{self.repository_base_path}/{path}"
 
-		for attachment in attachments:
-			shutil.copy( os.getcwd() + '/' + frappe.local.site + '/public' +  attachment.get("file_url"), repository_base_path + '/' + app + '/www' + attachment.get("save_path").replace('{{docs_base_url}}', '/docs'))
+			elif resolved_route.page_or_generator == "Page":
+				path = f"{self.repository_base_path}/{self.app}/{resolved_route.template}"
 
-		branch = repository
-		repository = frappe.get_doc('Repository', app)
+		self.update_file(path, edit.new_code)
 
-		popen(f'git -C {repository_base_path} remote rm upstream ')
-		popen(f'git -C {repository_base_path} remote rm origin ')
-		popen(f'git -C {repository_base_path} remote add origin {repository.origin}')
-		popen(f'git -C {repository_base_path} remote add upstream {repository.upstream}')
-		popen(f'git -C {repository_base_path} branch {branch}')
-		popen(f'git -C {repository_base_path} checkout {branch}')
-		popen(f'git -C {repository_base_path} add .')
-		popen(f'git -C {repository_base_path} commit -m "docs:{self.pr_title}" ')
-		popen(f'git -C {repository_base_path} push origin {branch}')
+	def save_attachments(self):
+		for attachment in self.attachments:
+			if attachment.get("save_path"):
+				shutil.copy(
+					f'{os.getcwd()}/{frappe.local.site}/public{attachment.get("file_url")}',
+					f'{self.repository_base_path}/{self.app}/www{attachment.get("save_path").replace("{{docs_base_url}}", "/docs")}',
+				)
 
-		# popen(f'gh -C {repository_base_path} auth login --with-token {repository.token}')
+	def _raise_pr(self,):
+		g = Github(self.repository.get_password("token"))
 
-		# popen(f'gh -C {repository_base_path} pr create --title {self.pr_title} --body {self.pr_body} --head {branch} --base master')
+		upstream_repo = g.get_repo("/".join(self.repository.upstream.split("/")[3:5]))
 
-		print(repository.token)
-		print(repository.token)
-		g = Github(repository.get_password('token'))
-
-		upstream_repo = g.get_repo('/'.join(repository.upstream.split('/')[3:5] ))
-
-
-		# upstream_user = g.get_user('hasnain2808')
-		# upstream_repo = upstream_user.get_repo('tox')
-
-		upstream_pullrequest = upstream_repo.create_pull(self.pr_title, self.pr_body, 'master',
-				'{}:{}'.format(repository.origin.split('/')[3],branch ), True)
-		print(upstream_pullrequest.number)
-		upstream = repository.upstream.replace('.git', '/')
-		self.pr_link = f'{upstream}/pull/{upstream_pullrequest.number}'
-		print(self.pr_link)
+		upstream_pullrequest = upstream_repo.create_pull(
+			self.pr_title,
+			self.pr_body,
+			"master",
+			"{}:{}".format(self.repository.origin.split("/")[3], self.uuid),
+			True,
+		)
+		upstream = self.repository.upstream.replace(".git", "/")
+		self.pr_link = f"{upstream}/pull/{upstream_pullrequest.number}"
+		self.repository = self.app
 		self.save()
 
+	def cleanup(self):
 		try:
-			shutil.rmtree(repository_base_path)
+			shutil.rmtree(self.repository_base_path)
 		except:
-			frappe.msgprint('Error while deleting directory')
+			frappe.msgprint("Error while deleting directory")
+
+	def update_file(self, path, code):
+		print(path)
+		print(code)
+		print("path")
+		print("code")
+		f = open(path, "w")
+		f.write(code)
+		f.close()
+
+	def load_attachments(self):
+		self.attachments = json.loads(self.attachment_path_mapping)
+
+	def git_set_remotes(self):
+		popen(f"git -C {self.repository_base_path} remote rm upstream ")
+		popen(f"git -C {self.repository_base_path} remote rm origin ")
+		popen(
+			f"git -C {self.repository_base_path} remote add origin {self.repository.origin}"
+		)
+		popen(
+			f"git -C {self.repository_base_path} remote add upstream {self.repository.upstream}"
+		)
+
+	def git_push(self):
+		popen(f"git -C {self.repository_base_path} branch {self.uuid}")
+		popen(f"git -C {self.repository_base_path} checkout {self.uuid}")
+		popen(f"git -C {self.repository_base_path} add .")
+		popen(f'git -C {self.repository_base_path} commit -m "docs:{self.pr_title}" ')
+		popen(f"git -C {self.repository_base_path} push origin {self.uuid}")
+
 
 def update_pr_status():
-	# frappe.db.get_all("Pull Request")
-	repository = frappe.get_doc('Repository', "erpnext_documentation")
-	g = Github(repository.get_password('token'))
-	print(g)
-	print('/'.join(repository.upstream.split('/')[3:5] ))
-	repo = g.get_repo('/'.join(repository.upstream.split('/')[3:5] ))
-	# repo = g.get_repo()
-	for pr in frappe.db.get_all("Pull Request", fields = ["name", "pr_link"]):
+	repository = frappe.get_doc("Repository", "erpnext_documentation")
+	g = Github(repository.get_password("token"))
+	repo = g.get_repo("/".join(repository.upstream.split("/")[3:5]))
+	for pr in frappe.db.get_all("Pull Request", fields=["name", "pr_link"]):
 		if pr.pr_link:
-			gh_pr = repo.get_pull(int(pr.pr_link.split('/')[-1]))
+			gh_pr = repo.get_pull(int(pr.pr_link.split("/")[-1]))
 			status = "Approved" if gh_pr.merged else "Unapproved"
 			frappe.db.update("Pull Request", pr.name, "status", status)
 	frappe.db.commit()
